@@ -1,0 +1,44 @@
+name: CI  
+
+on:
+  push:
+    branches: [ "main" ]  
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install "dvc[s3]" pandas  # Пример: DVC + S3 + pandas
+
+      - name: Configure AWS
+
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set default.region eu-north-1  # или ваш регион, если другой
+          
+      - name: Pull data from remote
+        run: |
+          dvc pull
+
+
+      - name: Reproduce DVC pipeline
+        run: |
+          dvc repro
+
+
+      - name: Push results to remote
+        run: |
+          dvc push
